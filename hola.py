@@ -1,158 +1,141 @@
-{
- "cells": [
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "id": "c0472d55-21c3-4736-865f-7ba36572ebca",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "import streamlit as st\n",
-    "from langchain import PromptTemplate\n",
-    "from langchain_openai import OpenAI\n",
-    "\n",
-    "template = \"\"\"\n",
-    "    Below is a draft text that may be poorly worded.\n",
-    "    Your goal is to:\n",
-    "    - Properly redact the draft text\n",
-    "    - Convert the draft text to a specified tone\n",
-    "    - Convert the draft text to a specified dialect\n",
-    "\n",
-    "    Here are some examples different Tones:\n",
-    "    - Formal: Greetings! OpenAI has announced that Sam Altman is rejoining the company as its Chief Executive Officer. After a period of five days of conversations, discussions, and deliberations, the decision to bring back Altman, who had been previously dismissed, has been made. We are delighted to welcome Sam back to OpenAI.\n",
-    "    - Informal: Hey everyone, it's been a wild week! We've got some exciting news to share - Sam Altman is back at OpenAI, taking up the role of chief executive. After a bunch of intense talks, debates, and convincing, Altman is making his triumphant return to the AI startup he co-founded.  \n",
-    "\n",
-    "    Here are some examples of words in different dialects:\n",
-    "    - American: French Fries, cotton candy, apartment, garbage, \\\n",
-    "        cookie, green thumb, parking lot, pants, windshield\n",
-    "    - British: chips, candyfloss, flag, rubbish, biscuit, green fingers, \\\n",
-    "        car park, trousers, windscreen\n",
-    "\n",
-    "    Example Sentences from each dialect:\n",
-    "    - American: Greetings! OpenAI has announced that Sam Altman is rejoining the company as its Chief Executive Officer. After a period of five days of conversations, discussions, and deliberations, the decision to bring back Altman, who had been previously dismissed, has been made. We are delighted to welcome Sam back to OpenAI.\n",
-    "    - British: On Wednesday, OpenAI, the esteemed artificial intelligence start-up, announced that Sam Altman would be returning as its Chief Executive Officer. This decisive move follows five days of deliberation, discourse and persuasion, after Altman's abrupt departure from the company which he had co-established.\n",
-    "\n",
-    "    Please start the redaction with a warm introduction. Add the introduction \\\n",
-    "        if you need to.\n",
-    "    \n",
-    "    Below is the draft text, tone, and dialect:\n",
-    "    DRAFT: {draft}\n",
-    "    TONE: {tone}\n",
-    "    DIALECT: {dialect}\n",
-    "\n",
-    "    YOUR {dialect} RESPONSE:\n",
-    "\"\"\"\n",
-    "\n",
-    "#PromptTemplate variables definition\n",
-    "prompt = PromptTemplate(\n",
-    "    input_variables=[\"tone\", \"dialect\", \"draft\"],\n",
-    "    template=template,\n",
-    ")\n",
-    "\n",
-    "\n",
-    "#LLM and key loading function\n",
-    "def load_LLM(openai_api_key):\n",
-    "    \"\"\"Logic for loading the chain you want to use should go here.\"\"\"\n",
-    "    # Make sure your openai_api_key is set as an environment variable\n",
-    "    llm = OpenAI(temperature=.7, openai_api_key=openai_api_key)\n",
-    "    return llm\n",
-    "\n",
-    "\n",
-    "#Page title and header\n",
-    "st.set_page_config(page_title=\"Re-write your text\")\n",
-    "st.header(\"Re-write your text\")\n",
-    "\n",
-    "\n",
-    "#Intro: instructions\n",
-    "col1, col2 = st.columns(2)\n",
-    "\n",
-    "with col1:\n",
-    "    st.markdown(\"Re-write your text in different styles.\")\n",
-    "\n",
-    "with col2:\n",
-    "    st.write(\"Contact with [AI Accelera](https://aiaccelera.com) to build your AI Projects\")\n",
-    "\n",
-    "\n",
-    "# Input OpenAI API Key\n",
-    "st.markdown(\"## Enter Your OpenAI API Key\")\n",
-    "\n",
-    "def get_openai_api_key():\n",
-    "    input_text = st.text_input(label=\"OpenAI API Key \",  placeholder=\"Ex: sk-2twmA8tfCb8un4...\", key=\"openai_api_key_input\", type=\"password\")\n",
-    "    return input_text\n",
-    "\n",
-    "openai_api_key = get_openai_api_key()\n",
-    "\n",
-    "\n",
-    "# Input\n",
-    "st.markdown(\"## Enter the text you want to re-write\")\n",
-    "\n",
-    "def get_draft():\n",
-    "    draft_text = st.text_area(label=\"Text\", label_visibility='collapsed', placeholder=\"Your Text...\", key=\"draft_input\")\n",
-    "    return draft_text\n",
-    "\n",
-    "draft_input = get_draft()\n",
-    "\n",
-    "if len(draft_input.split(\" \")) > 700:\n",
-    "    st.write(\"Please enter a shorter text. The maximum length is 700 words.\")\n",
-    "    st.stop()\n",
-    "\n",
-    "\n",
-    "# Prompt template tuning options\n",
-    "col1, col2 = st.columns(2)\n",
-    "with col1:\n",
-    "    option_tone = st.selectbox(\n",
-    "        'Which tone would you like your redaction to have?',\n",
-    "        ('Formal', 'Informal'))\n",
-    "    \n",
-    "with col2:\n",
-    "    option_dialect = st.selectbox(\n",
-    "        'Which English Dialect would you like?',\n",
-    "        ('American', 'British'))\n",
-    "    \n",
-    "    \n",
-    "# Output\n",
-    "st.markdown(\"### Your Re-written text:\")\n",
-    "\n",
-    "if draft_input:\n",
-    "    if not openai_api_key:\n",
-    "        st.warning('Please insert OpenAI API Key. \\\n",
-    "            Instructions [here](https://help.openai.com/en/articles/4936850-where-do-i-find-my-secret-api-key)', \n",
-    "            icon=\"⚠️\")\n",
-    "        st.stop()\n",
-    "\n",
-    "    llm = load_LLM(openai_api_key=openai_api_key)\n",
-    "\n",
-    "    prompt_with_draft = prompt.format(\n",
-    "        tone=option_tone, \n",
-    "        dialect=option_dialect, \n",
-    "        draft=draft_input\n",
-    "    )\n",
-    "\n",
-    "    improved_redaction = llm(prompt_with_draft)\n",
-    "\n",
-    "    st.write(improved_redaction)"
-   ]
-  }
- ],
- "metadata": {
-  "kernelspec": {
-   "display_name": "Python 3 (ipykernel)",
-   "language": "python",
-   "name": "python3"
-  },
-  "language_info": {
-   "codemirror_mode": {
-    "name": "ipython",
-    "version": 3
-   },
-   "file_extension": ".py",
-   "mimetype": "text/x-python",
-   "name": "python",
-   "nbconvert_exporter": "python",
-   "pygments_lexer": "ipython3",
-   "version": "3.12.3"
-  }
- },
- "nbformat": 4,
- "nbformat_minor": 5
-}
+import streamlit as st
+from langchain_openai import OpenAI
+from langchain.text_splitter import CharacterTextSplitter
+from langchain_community.embeddings import OpenAIEmbeddings
+from langchain_community.vectorstores import FAISS
+from langchain.chains import RetrievalQA
+from langchain.evaluation.qa import QAEvalChain
+
+def generate_response(
+    uploaded_file,
+    openai_api_key,
+    query_text,
+    response_text
+):
+    #format uploaded file
+    documents = [uploaded_file.read().decode()]
+    
+    #break it in small chunks
+    text_splitter = CharacterTextSplitter(
+        chunk_size=1000,
+        chunk_overlap=0
+    )
+    texts = text_splitter.create_documents(documents)
+    embeddings = OpenAIEmbeddings(
+        openai_api_key=openai_api_key
+    )
+    
+    # create a vectorstore and store there the texts
+    db = FAISS.from_documents(texts, embeddings)
+    
+    # create a retriever interface
+    retriever = db.as_retriever()
+    
+    # create a real QA dictionary
+    real_qa = [
+        {
+            "question": query_text,
+            "answer": response_text
+        }
+    ]
+    
+    # regular QA chain
+    qachain = RetrievalQA.from_chain_type(
+        llm=OpenAI(openai_api_key=openai_api_key),
+        chain_type="stuff",
+        retriever=retriever,
+        input_key="question"
+    )
+    
+    # predictions
+    predictions = qachain.apply(real_qa)
+    
+    # create an eval chain
+    eval_chain = QAEvalChain.from_llm(
+        llm=OpenAI(openai_api_key=openai_api_key)
+    )
+    # have it grade itself
+    graded_outputs = eval_chain.evaluate(
+        real_qa,
+        predictions,
+        question_key="question",
+        prediction_key="result",
+        answer_key="answer"
+    )
+    
+    response = {
+        "predictions": predictions,
+        "graded_outputs": graded_outputs
+    }
+    
+    return response
+
+st.set_page_config(
+    page_title="Evaluate a RAG App"
+)
+st.title("Evaluate a RAG App")
+
+with st.expander("Evaluate the quality of a RAG APP"):
+    st.write("""
+        To evaluate the quality of a RAG app, we will
+        ask it questions for which we already know the
+        real answers.
+        
+        That way we can see if the app is producing
+        the right answers or if it is hallucinating.
+    """)
+
+uploaded_file = st.file_uploader(
+    "Upload a .txt document",
+    type="txt"
+)
+
+query_text = st.text_input(
+    "Enter a question you have already fact-checked:",
+    placeholder="Write your question here",
+    disabled=not uploaded_file
+)
+
+response_text = st.text_input(
+    "Enter the real answer to the question:",
+    placeholder="Write the confirmed answer here",
+    disabled=not uploaded_file
+)
+
+result = []
+with st.form(
+    "myform",
+    clear_on_submit=True
+):
+    openai_api_key = st.text_input(
+        "OpenAI API Key:",
+        type="password",
+        disabled=not (uploaded_file and query_text)
+    )
+    submitted = st.form_submit_button(
+        "Submit",
+        disabled=not (uploaded_file and query_text)
+    )
+    if submitted and openai_api_key.startswith("sk-"):
+        with st.spinner(
+            "Wait, please. I am working on it..."
+            ):
+            response = generate_response(
+                uploaded_file,
+                openai_api_key,
+                query_text,
+                response_text
+            )
+            result.append(response)
+            del openai_api_key
+            
+if len(result):
+    st.write("Question")
+    st.info(response["predictions"][0]["question"])
+    st.write("Real answer")
+    st.info(response["predictions"][0]["answer"])
+    st.write("Answer provided by the AI App")
+    st.info(response["predictions"][0]["result"])
+    st.write("Therefore, the AI App answer was")
+    st.info(response["graded_outputs"][0]["results"])
+
